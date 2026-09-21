@@ -1,5 +1,4 @@
 import React from 'react';
-import { CheckCircle, AlertCircle, Info, X } from 'lucide-react';
 
 export interface ToastMessage {
   id: string;
@@ -29,23 +28,25 @@ export const Toast: React.FC<ToastProps> = ({ toasts, onDismiss }) => {
           }`}
         >
           {t.type === 'success' ? (
-            <CheckCircle className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+            <i className="ri-checkbox-circle-fill text-emerald-400 text-base shrink-0"></i>
           ) : t.type === 'error' ? (
-            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
+            <i className="ri-error-warning-fill text-rose-400 text-base shrink-0"></i>
           ) : (
-            <Info className="w-4 h-4 text-[#ff6b35] shrink-0 mt-0.5" />
+            <i className="ri-information-fill text-[#ff6b35] text-base shrink-0"></i>
           )}
 
           <div className="flex-1 font-medium leading-relaxed">{t.message}</div>
 
           <button
             onClick={() => onDismiss(t.id)}
-            className="text-zinc-500 hover:text-white shrink-0"
+            className="text-zinc-500 hover:text-white shrink-0 p-0.5"
+            title="Dismiss"
           >
-            <X className="w-3.5 h-3.5" />
+            <i className="ri-close-line text-sm"></i>
           </button>
         </div>
       ))}
     </div>
   );
 };
+

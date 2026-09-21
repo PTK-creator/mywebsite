@@ -1,14 +1,12 @@
 import React from 'react';
-import { Globe, Database } from 'lucide-react';
-import { SupabaseStatus } from '../types.ts';
+import { Globe } from 'lucide-react';
 
 interface FooterProps {
   onNavigate: (page: string) => void;
-  openDatabase: (tab?: 'buyers' | 'sellers' | 'sales' | 'supabase') => void;
-  supabaseStatus: SupabaseStatus | null;
+  openDatabase: (tab?: 'buyers' | 'sellers' | 'sales') => void;
 }
 
-export const Footer: React.FC<FooterProps> = ({ onNavigate, openDatabase, supabaseStatus }) => {
+export const Footer: React.FC<FooterProps> = ({ onNavigate, openDatabase }) => {
   return (
     <footer className="border-t border-white/10 bg-zinc-950/80 pt-12 pb-8 mt-20 text-xs text-zinc-400">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-8">
@@ -45,10 +43,6 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, openDatabase, supaba
             <button onClick={() => openDatabase('sellers')} className="hover:text-white transition-colors">
               Sellers Network
             </button>
-            <button onClick={() => openDatabase('supabase')} className="hover:text-white transition-colors text-emerald-400 flex items-center gap-1">
-              <Database className="w-3 h-3" />
-              <span>Supabase Status</span>
-            </button>
             <button onClick={() => onNavigate('about')} className="hover:text-white transition-colors">
               About
             </button>
@@ -61,13 +55,11 @@ export const Footer: React.FC<FooterProps> = ({ onNavigate, openDatabase, supaba
         {/* Bottom */}
         <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-[11px] text-zinc-500">
           <div>
-            Built by PTK Academy — enterprise peer-to-peer trade network. Connected to Supabase Cloud.
+            Built by PTK Academy — enterprise peer-to-peer trade network. All rights reserved.
           </div>
-          <div className="flex items-center gap-2">
-            <span className={`w-2 h-2 rounded-full ${supabaseStatus?.allTablesReady ? 'bg-emerald-400' : 'bg-amber-400'}`} />
-            <span>
-              {supabaseStatus?.allTablesReady ? 'Supabase Synced (PostgreSQL)' : 'Supabase Active (Schema Pending)'}
-            </span>
+          <div className="flex items-center gap-2 text-zinc-400">
+            <span className="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_rgba(52,211,153,0.6)]" />
+            <span>Direct P2P Trading Network Active</span>
           </div>
         </div>
       </div>

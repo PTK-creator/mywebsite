@@ -56,7 +56,9 @@ export const CartModal: React.FC<CartModalProps> = ({
 
         {cartItems.length === 0 ? (
           <div className="text-center py-12 space-y-3">
-            <div className="text-4xl">🛒</div>
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-800/80 border border-white/10 flex items-center justify-center text-zinc-500 text-3xl">
+              <i className="ri-shopping-cart-2-line"></i>
+            </div>
             <div className="text-zinc-300 font-semibold">Your cart is empty</div>
             <p className="text-xs text-zinc-500 max-w-xs mx-auto">
               Explore the marketplace and select items from verified suppliers to proceed.
@@ -68,7 +70,7 @@ export const CartModal: React.FC<CartModalProps> = ({
               {cartItems.map((item) => {
                 const rawPrice = parseFloat(String(item.price || '0').replace(/[^0-9.]/g, '')) || 0;
                 const itemSubtotal = rawPrice * item.qty;
-                const img = item.image || getSvgPlaceholder(item.cropName, '📦');
+                const img = item.image || getSvgPlaceholder(item.cropName, 'ri-box-3-line');
 
                 return (
                   <div

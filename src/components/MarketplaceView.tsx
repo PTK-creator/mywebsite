@@ -245,7 +245,7 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
                   : 'bg-zinc-900/90 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800 border border-white/5'
               }`}
             >
-              <span className="text-base">{cat.icon}</span>
+              <i className={`${cat.icon} text-base`}></i>
               <span>{cat.label}</span>
             </button>
           );
@@ -292,8 +292,8 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
                 className="group p-5 rounded-2xl bg-zinc-900/80 hover:bg-zinc-900 border border-white/10 hover:border-[#ff6b35]/60 transition-all duration-200 flex flex-col justify-between shadow-sm hover:shadow-xl hover:-translate-y-1 text-center"
               >
                 <div>
-                  <div className="text-4xl mb-3 group-hover:scale-110 transition-transform">
-                    {item.icon}
+                  <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-800/80 border border-white/5 flex items-center justify-center text-2xl text-[#ff6b35] group-hover:bg-[#ff6b35]/15 group-hover:border-[#ff6b35]/30 group-hover:scale-110 transition-all duration-200 mb-3 shadow-inner">
+                    <i className={item.icon}></i>
                   </div>
                   <h3 className="font-bold text-sm sm:text-base text-zinc-100 group-hover:text-[#ff6b35] transition-colors mb-2">
                     {item.name}
@@ -335,7 +335,9 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
 
         {filteredListings.length === 0 ? (
           <div className="text-center py-16 bg-zinc-900/40 rounded-2xl border border-white/5 text-zinc-400 space-y-3">
-            <div className="text-3xl">📦</div>
+            <div className="w-14 h-14 mx-auto rounded-2xl bg-zinc-800/80 border border-white/10 flex items-center justify-center text-3xl text-zinc-500 shadow-inner">
+              <i className="ri-inbox-archive-line"></i>
+            </div>
             <div className="text-base font-semibold text-zinc-300">
               No listings match your current filters.
             </div>
@@ -344,7 +346,7 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
             </p>
             <button
               onClick={() => onOpenAddListing(activeCategory, undefined, 'seller')}
-              className="px-4 py-2 rounded-xl bg-[#ff6b35] text-white text-xs font-bold inline-flex items-center gap-1.5"
+              className="px-4 py-2 rounded-xl bg-[#ff6b35] hover:bg-[#e8551f] text-white text-xs font-bold inline-flex items-center gap-1.5 transition-colors shadow-md"
             >
               <Plus className="w-3.5 h-3.5" />
               <span>Post New Listing</span>
@@ -356,7 +358,7 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
               const displayImg =
                 item.images && item.images.length > 0
                   ? item.images[0]
-                  : item.image || getSvgPlaceholder(item.cropName, '📦');
+                  : item.image || getSvgPlaceholder(item.cropName, 'ri-box-3-line');
 
               const isBuyer = item.role === 'buyer';
 
@@ -386,11 +388,9 @@ export const MarketplaceView: React.FC<MarketplaceViewProps> = ({
                       <span>{isBuyer ? 'Buyer Request' : 'Available Supply'}</span>
                     </div>
 
-                    {item.source === 'supabase' && (
-                      <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/30 backdrop-blur-md">
-                        Cloud
-                      </div>
-                    )}
+                    <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/30 backdrop-blur-md">
+                      Verified
+                    </div>
                   </div>
 
                   {/* Body */}

@@ -7,12 +7,8 @@ import {
   Database, 
   Moon, 
   Sun, 
-  Plus, 
-  CheckCircle2, 
-  AlertCircle, 
-  DatabaseZap 
+  Plus
 } from 'lucide-react';
-import { SupabaseStatus } from '../types.ts';
 
 interface HeaderProps {
   currentPage: string;
@@ -20,11 +16,10 @@ interface HeaderProps {
   cartCount: number;
   openCart: () => void;
   openAddListing: (role?: 'seller' | 'buyer') => void;
-  openDatabase: (initialTab?: 'buyers' | 'sellers' | 'sales' | 'supabase') => void;
+  openDatabase: (initialTab?: 'buyers' | 'sellers' | 'sales') => void;
   openSearch: () => void;
   isDark: boolean;
   toggleTheme: () => void;
-  supabaseStatus: SupabaseStatus | null;
   buyerNotifications: Array<{ id: number; text: string; time: string }>;
   clearNotifications: () => void;
 }
@@ -39,7 +34,6 @@ export const Header: React.FC<HeaderProps> = ({
   openSearch,
   isDark,
   toggleTheme,
-  supabaseStatus,
   buyerNotifications,
   clearNotifications,
 }) => {
@@ -117,33 +111,6 @@ export const Header: React.FC<HeaderProps> = ({
 
       {/* Right Controls */}
       <div className="flex items-center gap-2 md:gap-2.5">
-        {/* Supabase Status Pill */}
-        <button
-          onClick={() => openDatabase('supabase')}
-          title="Supabase Cloud Connection Status"
-          className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
-            supabaseStatus?.allTablesReady
-              ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-              : supabaseStatus?.connected
-              ? 'bg-amber-500/10 text-amber-400 border-amber-500/20 hover:bg-amber-500/20'
-              : 'bg-zinc-800 text-zinc-400 border-zinc-700'
-          }`}
-        >
-          <DatabaseZap className="w-3.5 h-3.5" />
-          <span>
-            {supabaseStatus?.allTablesReady
-              ? 'Supabase Synced'
-              : supabaseStatus?.connected
-              ? 'Supabase (SQL Setup)'
-              : 'Connecting...'}
-          </span>
-          {supabaseStatus?.allTablesReady ? (
-            <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-          ) : (
-            <AlertCircle className="w-3 h-3 text-amber-400 animate-pulse" />
-          )}
-        </button>
-
         {/* Search button */}
         <button
           onClick={openSearch}

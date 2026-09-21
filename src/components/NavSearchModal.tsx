@@ -92,7 +92,7 @@ export const NavSearchModal: React.FC<NavSearchModalProps> = ({
               const displayImg =
                 item.images && item.images.length > 0
                   ? item.images[0]
-                  : item.image || getSvgPlaceholder(item.cropName, '📦');
+                  : item.image || getSvgPlaceholder(item.cropName, 'ri-box-3-line');
 
               return (
                 <div

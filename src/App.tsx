@@ -12,13 +12,13 @@ import { NavSearchModal } from './components/NavSearchModal.tsx';
 import { AboutContactViews } from './components/AboutContactViews.tsx';
 import { Footer } from './components/Footer.tsx';
 import { Toast, ToastMessage } from './components/Toast.tsx';
+import { CATEGORIES } from './data/categories.ts';
 import { 
   Listing, 
   OrderItem, 
   BuyerRecord, 
   SellerRecord, 
-  OrderRecord, 
-  SupabaseStatus 
+  OrderRecord 
 } from './types.ts';
 import { 
   fetchListings, 
@@ -29,9 +29,7 @@ import {
   fetchSellers, 
   fetchOrders, 
   submitOrder, 
-  updateOrderStatus, 
-  fetchSupabaseStatus, 
-  fetchSupabaseSchemaSql 
+  updateOrderStatus 
 } from './lib/api.ts';
 
 export default function App() {
@@ -59,10 +57,6 @@ export default function App() {
     }
   });
 
-  // Supabase Diagnostics
-  const [supabaseStatus, setSupabaseStatus] = useState<SupabaseStatus | null>(null);
-  const [schemaSql, setSchemaSql] = useState<string>('');
-
   // Modals state
   const [isAddListingOpen, setIsAddListingOpen] = useState<boolean>(false);
   const [addListingInitialRole, setAddListingInitialRole] = useState<'seller' | 'buyer'>('seller');
@@ -79,7 +73,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
   const [isDatabaseOpen, setIsDatabaseOpen] = useState<boolean>(false);
-  const [databaseTab, setDatabaseTab] = useState<'buyers' | 'sellers' | 'sales' | 'supabase'>('buyers');
+  const [databaseTab, setDatabaseTab] = useState<'buyers' | 'sellers' | 'sales'>('buyers');
   const [isNavSearchOpen, setIsNavSearchOpen] = useState<boolean>(false);
 
   // UI state
@@ -121,21 +115,17 @@ export default function App() {
   // Load Data from API
   const refreshData = useCallback(async () => {
     try {
-      const [listingsRes, buyersRes, sellersRes, ordersRes, statusRes, schemaText] = await Promise.all([
+      const [listingsRes, buyersRes, sellersRes, ordersRes] = await Promise.all([
         fetchListings(),
         fetchBuyers().catch(() => ({ buyers: [] })),
         fetchSellers().catch(() => ({ sellers: [] })),
         fetchOrders().catch(() => ({ orders: [] })),
-        fetchSupabaseStatus().catch(() => null),
-        fetchSupabaseSchemaSql().catch(() => ''),
       ]);
 
       if (listingsRes.listings) setListings(listingsRes.listings);
       if (buyersRes.buyers) setBuyers(buyersRes.buyers);
       if (sellersRes.sellers) setSellers(sellersRes.sellers);
       if (ordersRes.orders) setOrders(ordersRes.orders);
-      if (statusRes) setSupabaseStatus(statusRes);
-      if (schemaText) setSchemaSql(schemaText);
     } catch (err) {
       console.warn('Initial data load error:', err);
     }
@@ -144,6 +134,29 @@ export default function App() {
   useEffect(() => {
     refreshData();
   }, [refreshData]);
+
+  // Handle Deep-Links from Mobile Scanned QR Codes
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      const categoryParam = params.get('category');
+      const cropParam = params.get('crop');
+      if (categoryParam && CATEGORIES[categoryParam]) {
+        setActiveCategory(categoryParam);
+        if (cropParam) {
+          const catDef = CATEGORIES[categoryParam];
+          const hasCrop = catDef.crops.some((c) => c.id === cropParam);
+          if (hasCrop) {
+            setDetailCategory(categoryParam);
+            setDetailCropId(cropParam);
+            setIsDetailOpen(true);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Deep link parse error:', e);
+    }
+  }, []);
 
   // Handlers for Listings (Store, Retrieve, Modify)
   const handleCreateListing = async (formData: any) => {
@@ -157,14 +170,9 @@ export default function App() {
         time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
       setBuyerNotifications((prev) => [notif, ...prev]);
-      addToast(`🔔 New Buyer Request posted for ${res.listing.cropName}!`, 'info');
+      addToast(`New Buyer Request posted for ${res.listing.cropName}`, 'info');
     } else {
-      addToast(
-        res.source === 'supabase'
-          ? '🎉 Product published and persisted in Supabase Cloud!'
-          : '🎉 Product published in local cache (Sync to Supabase ready)',
-        'success'
-      );
+      addToast('Listing published successfully to the marketplace.', 'success');
     }
 
     // Refresh directories
@@ -177,13 +185,13 @@ export default function App() {
     setListings((prev) =>
       prev.map((item) => (item.id === id ? { ...item, ...updates } : item))
     );
-    addToast('✅ Listing modified and updated successfully.', 'success');
+    addToast('Listing modified and updated successfully.', 'success');
   };
 
   const handleDeleteListing = async (id: string) => {
     await deleteListing(id);
     setListings((prev) => prev.filter((item) => item.id !== id));
-    addToast('🗑️ Listing removed from marketplace.', 'info');
+    addToast('Listing removed from marketplace.', 'info');
   };
 
   // Cart operations
@@ -211,7 +219,7 @@ export default function App() {
     if (buyNow) {
       setIsCartOpen(true);
     } else {
-      addToast(`🛒 Added ${item.cropName} to your cart!`, 'success');
+      addToast(`Added ${item.cropName} to your cart.`, 'success');
     }
   };
 
@@ -247,7 +255,7 @@ export default function App() {
     setOrders((prev) => [res.order, ...prev]);
     setCart([]);
     addToast(
-      `🎉 Order Confirmed! Sellers and coordinators (${res.alertRecipient.phone}) have been notified for delivery.`,
+      `Order Confirmed! Coordinator (${res.alertRecipient.phone}) has been notified for delivery.`,
       'success'
     );
     // Refresh buyers directory
@@ -285,7 +293,7 @@ export default function App() {
     setIsDetailOpen(true);
   };
 
-  const openDatabaseModal = (initialTab: 'buyers' | 'sellers' | 'sales' | 'supabase' = 'buyers') => {
+  const openDatabaseModal = (initialTab: 'buyers' | 'sellers' | 'sales' = 'buyers') => {
     setDatabaseTab(initialTab);
     setIsDatabaseOpen(true);
   };
@@ -308,7 +316,6 @@ export default function App() {
           openSearch={() => setIsNavSearchOpen(true)}
           isDark={isDark}
           toggleTheme={() => setIsDark(!isDark)}
-          supabaseStatus={supabaseStatus}
           buyerNotifications={buyerNotifications}
           clearNotifications={() => setBuyerNotifications([])}
         />
@@ -327,7 +334,6 @@ export default function App() {
               onFilterDelivery={setSelectedDelivery}
               selectedCountry={selectedCountry}
               selectedDelivery={selectedDelivery}
-              supabaseStatus={supabaseStatus}
             />
           )}
 
@@ -359,7 +365,6 @@ export default function App() {
         <Footer
           onNavigate={(p) => setCurrentPage(p as any)}
           openDatabase={openDatabaseModal}
-          supabaseStatus={supabaseStatus}
         />
       </div>
 
@@ -424,10 +429,7 @@ export default function App() {
         buyers={buyers}
         sellers={sellers}
         orders={orders}
-        supabaseStatus={supabaseStatus}
-        onRefreshStatus={refreshData}
         onUpdateOrderStatus={handleUpdateOrderStatus}
-        schemaSql={schemaSql}
       />
 
       <NavSearchModal

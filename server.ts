@@ -9,9 +9,44 @@ dotenv.config();
 const PORT = 3000;
 const app = express();
 
-// Middleware
-app.use(express.json({ limit: "15mb" }));
-app.use(express.urlencoded({ extended: true, limit: "15mb" }));
+// Security & Request Middleware
+app.use((_req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  next();
+});
+
+// Lightweight In-Memory Anti-Spam / Rate Limiter for write endpoints
+const requestBuckets = new Map<string, { count: number; resetTime: number }>();
+function rateLimiter(limit = 60, windowMs = 60000) {
+  return (req: Request, res: Response, next: () => void) => {
+    const ip = (req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "global";
+    const now = Date.now();
+    const bucket = requestBuckets.get(ip) || { count: 0, resetTime: now + windowMs };
+
+    if (now > bucket.resetTime) {
+      bucket.count = 1;
+      bucket.resetTime = now + windowMs;
+    } else {
+      bucket.count += 1;
+    }
+
+    requestBuckets.set(ip, bucket);
+
+    if (bucket.count > limit) {
+      return res.status(429).json({
+        success: false,
+        error: "Too many requests. Please slow down.",
+      });
+    }
+    next();
+  };
+}
+
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
 // Supabase Configuration
 const SUPABASE_URL = process.env.SUPABASE_URL || "https://eocpjpkmjwhajqodtkre.supabase.co";
@@ -28,89 +63,8 @@ try {
   console.error("Failed to initialize Supabase client:", err);
 }
 
-// In-Memory Hybrid Store & Initial Seed Data
-const DEFAULT_SEED_LISTINGS = [
-  {
-    id: "seed-1",
-    category: "electronics",
-    cropId: "smartphones",
-    cropName: "Smartphones & Tablets",
-    role: "seller" as const,
-    name: "Apex Digital Hub",
-    phone: "+263 778 788 197",
-    country: "Zimbabwe",
-    marketType: "LOCAL" as const,
-    deliveryOption: "Express Delivery" as const,
-    location: "Harare CBD, Shop 14",
-    quantity: "15 units",
-    price: "380",
-    notes: "Brand new 5G Smartphones, 256GB storage, dual SIM, 1-year manufacturer warranty.",
-    image: null,
-    images: [],
-    status: "active" as const,
-    date: new Date().toISOString(),
-  },
-  {
-    id: "seed-2",
-    category: "automobiles",
-    cropId: "sedans_hatchbacks",
-    cropName: "Sedans & Hatchbacks",
-    role: "seller" as const,
-    name: "Premier Motors Zim",
-    phone: "+263 712 461 904",
-    country: "Zimbabwe",
-    marketType: "LOCAL" as const,
-    deliveryOption: "Pickup" as const,
-    location: "Bulawayo Industrial Site",
-    quantity: "2 vehicles",
-    price: "4500",
-    notes: "2016 Fuel-efficient 1.5L automatic sedan in pristine mechanical condition.",
-    image: null,
-    images: [],
-    status: "active" as const,
-    date: new Date().toISOString(),
-  },
-  {
-    id: "seed-3",
-    category: "horticulture",
-    cropId: "avocado",
-    cropName: "Avocados",
-    role: "seller" as const,
-    name: "Highland Orchards",
-    phone: "+263 778 788 197",
-    country: "Zimbabwe",
-    marketType: "INTERNATIONAL" as const,
-    deliveryOption: "International Shipping" as const,
-    location: "Chipinge Valley Estate",
-    quantity: "500 boxes",
-    price: "18",
-    notes: "Export grade Hass Avocados, pest certified, ready for air freight and refrigerated sea container shipment.",
-    image: null,
-    images: [],
-    status: "active" as const,
-    date: new Date().toISOString(),
-  },
-  {
-    id: "seed-4",
-    category: "clothes",
-    cropId: "mens_wear",
-    cropName: "Men's Clothing",
-    role: "seller" as const,
-    name: "Savile Stitch Emporium",
-    phone: "+27 82 555 4321",
-    country: "South Africa",
-    marketType: "INTERNATIONAL" as const,
-    deliveryOption: "Standard Shipping" as const,
-    location: "Johannesburg City Centre",
-    quantity: "80 sets",
-    price: "65",
-    notes: "Tailored luxury cotton business suits and formal shirts with corporate embroidery options.",
-    image: null,
-    images: [],
-    status: "active" as const,
-    date: new Date().toISOString(),
-  },
-];
+// Production In-Memory Store (Zero demo items - real user-generated data only)
+const DEFAULT_SEED_LISTINGS: ServerListing[] = [];
 
 interface ServerListing {
   id: string;
@@ -133,7 +87,7 @@ interface ServerListing {
   date: string;
 }
 
-let fallbackListings: ServerListing[] = [...DEFAULT_SEED_LISTINGS];
+let fallbackListings: ServerListing[] = [];
 let fallbackBuyers: Array<{
   id: string;
   name: string;
@@ -142,17 +96,7 @@ let fallbackBuyers: Array<{
   location: string;
   interest: string;
   created_at: string;
-}> = [
-  {
-    id: "buyer-seed-1",
-    name: "Global Grain Traders",
-    phone: "+263 771 900 112",
-    country: "Zimbabwe",
-    location: "Harare Grain Terminal",
-    interest: "Grains, Rice & Flour",
-    created_at: new Date().toISOString(),
-  },
-];
+}> = [];
 
 let fallbackSellers: Array<{
   id: string;
@@ -162,26 +106,7 @@ let fallbackSellers: Array<{
   location: string;
   product: string;
   created_at: string;
-}> = [
-  {
-    id: "seller-seed-1",
-    name: "Apex Digital Hub",
-    phone: "+263 778 788 197",
-    country: "Zimbabwe",
-    location: "Harare CBD, Shop 14",
-    product: "Smartphones & Tablets",
-    created_at: new Date().toISOString(),
-  },
-  {
-    id: "seller-seed-2",
-    name: "Premier Motors Zim",
-    phone: "+263 712 461 904",
-    country: "Zimbabwe",
-    location: "Bulawayo Industrial Site",
-    product: "Sedans & Hatchbacks",
-    created_at: new Date().toISOString(),
-  },
-];
+}> = [];
 
 let fallbackOrders: Array<{
   id: string;
@@ -196,10 +121,21 @@ let fallbackOrders: Array<{
   notes?: string;
 }> = [];
 
-// Helper: Sanitize Text Input
+// Helper: Sanitize Text Input against XSS, script injection, and null bytes
 function sanitizeString(str: any, maxLen = 500): string {
   if (typeof str !== "string") return "";
-  return str.trim().slice(0, maxLen);
+  return str
+    .replace(/\0/g, "")
+    .replace(/<[^>]*>?/gm, "")
+    .replace(/javascript:/gi, "")
+    .replace(/data:/gi, "")
+    .trim()
+    .slice(0, maxLen);
+}
+
+// Helper: Validate ID strings against path traversal & SQL injection
+function isValidId(id: string): boolean {
+  return typeof id === "string" && /^[a-zA-Z0-9_\-]+$/.test(id) && id.length <= 128;
 }
 
 // SQL Migration Script for Supabase SQL Editor
@@ -403,7 +339,7 @@ app.get("/api/supabase/schema", (_req: Request, res: Response) => {
 });
 
 // Automated Migration Endpoint
-app.post("/api/supabase/migrate", async (req: Request, res: Response) => {
+app.post("/api/supabase/migrate", rateLimiter(5, 60000), async (req: Request, res: Response) => {
   const { accessToken, dbPassword, connectionString } = req.body || {};
   const token = accessToken || process.env.SUPABASE_ACCESS_TOKEN;
   const password = dbPassword || process.env.SUPABASE_DB_PASSWORD;
@@ -490,50 +426,6 @@ app.get("/api/listings", async (req: Request, res: Response) => {
       let { data, error } = await query;
 
       if (!error && data) {
-        // Auto-seed initial catalog into Supabase if table is brand new and empty
-        if (
-          data.length === 0 &&
-          (!category || category === "ALL") &&
-          (!role || role === "ALL") &&
-          !search &&
-          (!scope || scope === "ALL") &&
-          (!country || country === "ALL")
-        ) {
-          try {
-            const seedRows = DEFAULT_SEED_LISTINGS.map((item) => ({
-              id: item.id,
-              category: item.category,
-              crop_id: item.cropId,
-              crop_name: item.cropName,
-              role: item.role,
-              name: item.name,
-              phone: item.phone,
-              country: item.country,
-              location: item.location,
-              market_type: item.marketType,
-              delivery_option: item.deliveryOption,
-              quantity: item.quantity,
-              price: item.price,
-              notes: item.notes,
-              image: item.image,
-              images: item.images || [],
-              status: item.status,
-              created_at: item.date,
-              updated_at: item.date,
-            }));
-            await supabase.from("listings").insert(seedRows);
-            await supabase.from("buyers").upsert(fallbackBuyers);
-            await supabase.from("sellers").upsert(fallbackSellers);
-
-            const refreshed = await supabase.from("listings").select("*").order("created_at", { ascending: false });
-            if (refreshed.data && refreshed.data.length > 0) {
-              data = refreshed.data;
-            }
-          } catch (seedErr) {
-            console.warn("Auto-seed into Supabase failed:", seedErr);
-          }
-        }
-
         // Map database columns to app format
         let mapped = data.map((item) => ({
           id: item.id,
@@ -605,7 +497,7 @@ app.get("/api/listings", async (req: Request, res: Response) => {
 });
 
 // POST /api/listings: Store new listing
-app.post("/api/listings", async (req: Request, res: Response) => {
+app.post("/api/listings", rateLimiter(30), async (req: Request, res: Response) => {
   const body = req.body;
 
   // Validation
@@ -748,8 +640,11 @@ app.post("/api/listings", async (req: Request, res: Response) => {
 });
 
 // PUT /api/listings/:id: Modify an existing listing
-app.put("/api/listings/:id", async (req: Request, res: Response) => {
+app.put("/api/listings/:id", rateLimiter(30), async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!isValidId(id)) {
+    return res.status(400).json({ success: false, error: "Invalid listing ID format" });
+  }
   const body = req.body;
 
   const updates: Record<string, any> = {};
@@ -797,8 +692,11 @@ app.put("/api/listings/:id", async (req: Request, res: Response) => {
 });
 
 // DELETE /api/listings/:id: Remove a listing
-app.delete("/api/listings/:id", async (req: Request, res: Response) => {
+app.delete("/api/listings/:id", rateLimiter(30), async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!isValidId(id)) {
+    return res.status(400).json({ success: false, error: "Invalid listing ID format" });
+  }
 
   fallbackListings = fallbackListings.filter((l) => l.id !== id);
 
@@ -836,7 +734,7 @@ app.get("/api/buyers", async (_req: Request, res: Response) => {
   return res.json({ success: true, buyers: fallbackBuyers, source: "local" });
 });
 
-app.post("/api/buyers", async (req: Request, res: Response) => {
+app.post("/api/buyers", rateLimiter(30), async (req: Request, res: Response) => {
   const name = sanitizeString(req.body.name, 100);
   const phone = sanitizeString(req.body.phone, 40);
   const country = sanitizeString(req.body.country, 100);
@@ -921,7 +819,7 @@ app.get("/api/orders", async (_req: Request, res: Response) => {
   return res.json({ success: true, orders: fallbackOrders, source: "local" });
 });
 
-app.post("/api/orders", async (req: Request, res: Response) => {
+app.post("/api/orders", rateLimiter(20), async (req: Request, res: Response) => {
   const { buyerName, buyerPhone, destination, items, notes } = req.body;
 
   const sBuyerName = sanitizeString(buyerName, 100);
@@ -1027,8 +925,11 @@ app.post("/api/orders", async (req: Request, res: Response) => {
 });
 
 // PATCH /api/orders/:id: Update order status
-app.patch("/api/orders/:id", async (req: Request, res: Response) => {
+app.patch("/api/orders/:id", rateLimiter(30), async (req: Request, res: Response) => {
   const { id } = req.params;
+  if (!isValidId(id)) {
+    return res.status(400).json({ success: false, error: "Invalid order ID format" });
+  }
   const { status } = req.body;
   const validStatuses = ["pending", "confirmed", "dispatched", "completed", "cancelled"];
 
@@ -1054,7 +955,21 @@ app.patch("/api/orders/:id", async (req: Request, res: Response) => {
 // VITE SPA MIDDLEWARE / PRODUCTION SERVING
 // ==========================================
 
+async function cleanupLegacySeedData() {
+  if (!supabase) return;
+  try {
+    // Purge legacy demo seed rows from Supabase if any exist
+    await supabase.from("listings").delete().like("id", "seed-%");
+    await supabase.from("buyers").delete().like("id", "%seed%");
+    await supabase.from("sellers").delete().like("id", "%seed%");
+  } catch (err) {
+    // Graceful if table not initialized
+  }
+}
+
 async function start() {
+  await cleanupLegacySeedData();
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

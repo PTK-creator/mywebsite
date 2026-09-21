@@ -12,7 +12,7 @@ import {
   User, 
   Globe2 
 } from 'lucide-react';
-import { Listing, SupabaseStatus } from '../types.ts';
+import { Listing } from '../types.ts';
 import { WORLD_COUNTRIES, getSvgPlaceholder } from '../data/categories.ts';
 
 interface HeroProps {
@@ -26,27 +26,26 @@ interface HeroProps {
   onFilterDelivery: (delivery: string) => void;
   selectedCountry: string;
   selectedDelivery: string;
-  supabaseStatus: SupabaseStatus | null;
 }
 
 const SHOWCASE_SLIDES = [
   {
-    icon: '💻',
+    icon: 'ri-macbook-line',
     title: 'Consumer Electronics',
     description: 'Laptops, 5G smartphones, smart appliances, photography cameras, and commercial gadgets with direct seller pricing.',
   },
   {
-    icon: '🚗',
+    icon: 'ri-car-line',
     title: 'Automobiles & Fleet',
     description: 'Sedans, commercial pickups, tractors, motorcycles, and authentic OEM spare parts with door-to-door delivery.',
   },
   {
-    icon: '👕',
+    icon: 'ri-shirt-line',
     title: 'Apparel & Fashion',
     description: 'Quality garments, bespoke tailored suits, footwear, textiles, and certified institutional work uniforms.',
   },
   {
-    icon: '🥭',
+    icon: 'ri-plant-line',
     title: 'Produce & Harvests',
     description: 'Export grade avocados, mangoes, grains, organic vegetables, and bulk commercial cash crops with freight logistics.',
   },
@@ -63,7 +62,6 @@ export const Hero: React.FC<HeroProps> = ({
   onFilterDelivery,
   selectedCountry,
   selectedDelivery,
-  supabaseStatus,
 }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
 
@@ -188,9 +186,9 @@ export const Hero: React.FC<HeroProps> = ({
             </div>
             <div className="hidden sm:block">
               <div className="text-2xl sm:text-3xl font-extrabold text-emerald-400 font-['Sora',sans-serif]">
-                {supabaseStatus?.allTablesReady ? '100%' : 'Ready'}
+                100%
               </div>
-              <div className="text-xs text-zinc-400 font-medium">Cloud Persistence</div>
+              <div className="text-xs text-zinc-400 font-medium">Direct P2P Trading</div>
             </div>
           </div>
         </div>
@@ -199,8 +197,8 @@ export const Hero: React.FC<HeroProps> = ({
         <div className="lg:col-span-5">
           <div className="relative rounded-2xl bg-gradient-to-br from-zinc-900/90 to-zinc-950 border border-white/10 p-7 shadow-2xl overflow-hidden">
             <div className="relative z-10 space-y-4">
-              <div className="text-5xl animate-bounce duration-1000">
-                {SHOWCASE_SLIDES[currentSlide].icon}
+              <div className="w-16 h-16 rounded-2xl bg-zinc-800/80 border border-white/10 flex items-center justify-center text-3xl text-[#ff6b35] shadow-inner">
+                <i className={SHOWCASE_SLIDES[currentSlide].icon}></i>
               </div>
               <h3 className="text-2xl font-bold text-white font-['Sora',sans-serif]">
                 {SHOWCASE_SLIDES[currentSlide].title}
@@ -284,11 +282,9 @@ export const Hero: React.FC<HeroProps> = ({
                       <span>{item.marketType === 'INTERNATIONAL' ? 'Cross-Border' : 'Local'}</span>
                     </div>
 
-                    {item.source === 'supabase' && (
-                      <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/30 backdrop-blur-md">
-                        Cloud
-                      </div>
-                    )}
+                    <div className="absolute top-2.5 right-2.5 px-2 py-0.5 rounded-md text-[10px] font-bold text-emerald-300 bg-emerald-950/80 border border-emerald-500/30 backdrop-blur-md">
+                      Verified
+                    </div>
                   </div>
 
                   {/* Body */}

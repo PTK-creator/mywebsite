@@ -188,7 +188,7 @@ export const AddListingModal: React.FC<AddListingModalProps> = ({
               >
                 {Object.entries(CATEGORIES).map(([key, cat]) => (
                   <option key={key} value={key} className="bg-zinc-900 text-zinc-200">
-                    {cat.icon} {cat.label}
+                    {cat.label}
                   </option>
                 ))}
               </select>
@@ -206,7 +206,7 @@ export const AddListingModal: React.FC<AddListingModalProps> = ({
               >
                 {crops.map((c) => (
                   <option key={c.id} value={c.id} className="bg-zinc-900 text-zinc-200">
-                    {c.icon} {c.name}
+                    {c.name}
                   </option>
                 ))}
               </select>
