@@ -1,0 +1,6 @@
+{
+  "name": "PTK-Link Marketplace",
+  "description": "Global peer-to-peer trade network connected to Supabase for storing, retrieving, and modifying listings, buyers, sellers, and order records.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
